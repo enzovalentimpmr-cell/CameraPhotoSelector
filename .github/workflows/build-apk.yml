@@ -5,6 +5,7 @@ on:
 
 jobs:
   build:
+    name: Compilar APK
     runs-on: ubuntu-latest
 
     steps:
@@ -17,44 +18,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Descompactar projeto
-        run: |
-          mkdir -p projeto
-          unzip -o *.zip -d projeto || true
-
-      - name: Localizar projeto Gradle
-        run: |
-          echo "Procurando arquivos Gradle..."
-          find projeto -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" -o -name "build.gradle" -o -name "build.gradle.kts" \)
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Compilar APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Verificar APK
         run: |
-          GRADLE_DIR=$(find projeto -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) -printf '%h\n' | head -n 1)
+          echo "Procurando APK..."
+          find . -type f -name "*.apk" -print
 
-          if [ -z "$GRADLE_DIR" ]; then
-            echo "ERRO: Não foi encontrado um projeto Gradle dentro da pasta projeto."
-            exit 1
-          fi
-
-          echo "Projeto Gradle encontrado em: $GRADLE_DIR"
-          cd "$GRADLE_DIR"
-
-          chmod +x gradlew 2>/dev/null || true
-
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug --no-daemon
-          else
-            gradle assembleDebug --no-daemon
-          fi
-
-      - name: Localizar APK
-        run: |
-          echo "APKs encontrados:"
-          find projeto -type f -name "*.apk" -print
-
-      - name: Enviar APK
+      - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
           name: CameraPhotoSelector-APK
-          path: projeto/**/*.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
