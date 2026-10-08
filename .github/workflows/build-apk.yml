@@ -2,40 +2,59 @@ name: Gerar APK
 
 on:
   workflow_dispatch:
-  push:
-    branches: ["principal"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Baixar projeto
+      - name: Baixar código
         uses: actions/checkout@v4
 
-      - name: Preparar Java
+      - name: Configurar Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-
-      - name: Instalar Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.10.2"
+          java-version: '17'
 
       - name: Descompactar projeto
         run: |
-          mkdir projeto
-          unzip -q CameraPhotoSelector_GitHubActions.zip -d projeto
+          mkdir -p projeto
+          unzip -o *.zip -d projeto || true
 
-     - name: Compilar APK
-  run: |
-    cd projeto
-    find . -name settings.gradle -o -name settings.gradle.kts
-    gradle assembleDebug --no-daemon
-      - name: Disponibilizar APK
+      - name: Localizar projeto Gradle
+        run: |
+          echo "Procurando arquivos Gradle..."
+          find projeto -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" -o -name "build.gradle" -o -name "build.gradle.kts" \)
+
+      - name: Compilar APK
+        run: |
+          GRADLE_DIR=$(find projeto -type f \( -name "settings.gradle" -o -name "settings.gradle.kts" \) -printf '%h\n' | head -n 1)
+
+          if [ -z "$GRADLE_DIR" ]; then
+            echo "ERRO: Não foi encontrado um projeto Gradle dentro da pasta projeto."
+            exit 1
+          fi
+
+          echo "Projeto Gradle encontrado em: $GRADLE_DIR"
+          cd "$GRADLE_DIR"
+
+          chmod +x gradlew 2>/dev/null || true
+
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug --no-daemon
+          else
+            gradle assembleDebug --no-daemon
+          fi
+
+      - name: Localizar APK
+        run: |
+          echo "APKs encontrados:"
+          find projeto -type f -name "*.apk" -print
+
+      - name: Enviar APK
         uses: actions/upload-artifact@v4
         with:
           name: CameraPhotoSelector-APK
-          path: projeto/app/build/outputs/apk/debug/app-debug.apk
+          path: projeto/**/*.apk
+          if-no-files-found: error
