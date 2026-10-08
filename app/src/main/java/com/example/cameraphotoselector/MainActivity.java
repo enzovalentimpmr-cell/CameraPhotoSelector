@@ -12,6 +12,7 @@ import android.widget.TextView;
 public class MainActivity extends Activity {
 
     private static final int REQUEST_GALLERY = 1001;
+    private static final int REQUEST_CAMERA = 2001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,17 +23,26 @@ public class MainActivity extends Activity {
         layout.setPadding(40, 60, 40, 40);
 
         TextView title = new TextView(this);
-        title.setText("Escolha uma imagem");
-        title.setTextSize(24);
+        title.setText("Filtro Facial");
+        title.setTextSize(28);
         title.setPadding(0, 0, 0, 40);
 
+        TextView description = new TextView(this);
+        description.setText(
+                "Escolha uma foto para usar como referência " +
+                "ou abra a câmera frontal."
+        );
+        description.setTextSize(18);
+        description.setPadding(0, 0, 0, 30);
+
         Button galleryButton = new Button(this);
-        galleryButton.setText("🖼️ Escolher foto da galeria");
+        galleryButton.setText("🖼️ Escolher foto de referência");
 
         Button cameraButton = new Button(this);
-        cameraButton.setText("📷 Tirar uma foto");
+        cameraButton.setText("📷 Abrir câmera frontal");
 
         layout.addView(title);
+        layout.addView(description);
         layout.addView(galleryButton);
         layout.addView(cameraButton);
 
@@ -44,7 +54,6 @@ public class MainActivity extends Activity {
     }
 
     private void openGallery() {
-
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.setType("image/*");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -54,11 +63,10 @@ public class MainActivity extends Activity {
     }
 
     private void openCamera() {
-
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
         if (intent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(intent, 2001);
+            startActivityForResult(intent, REQUEST_CAMERA);
         }
     }
 
@@ -79,10 +87,8 @@ public class MainActivity extends Activity {
             Uri selectedImage = data.getData();
 
             if (selectedImage != null) {
-
                 Intent result = new Intent();
                 result.setData(selectedImage);
-
                 result.addFlags(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
                 );
