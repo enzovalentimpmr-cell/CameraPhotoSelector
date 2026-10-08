@@ -31,7 +31,11 @@ jobs:
 
       - name: Compilar APK
         working-directory: projeto
-        run: gradle assembleDebug --no-daemon
+        run: - name: Compilar APK
+  run: |
+    cd projeto
+    find . -name settings.gradle -o -name settings.gradle.kts
+    gradle assembleDebug --no-daemon
 
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
